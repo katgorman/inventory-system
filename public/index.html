@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inventory System</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 30px auto; padding: 0 12px; }
+    h1 { margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f3f3f3; }
+    a.button { display:inline-block; margin:6px 0; padding:8px 12px; background:#007bff; color:#fff; border-radius:4px; text-decoration:none; }
+    a.button:hover { background:#0056b3; }
+    button { padding: 5px 10px; }
+    .error { color: #b00020; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <h1>Inventory System</h1>
+  <a href="add_item.html" class="button">Add New Item</a>
+
+  <div id="msg"></div>
+
+  <table id="itemsTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Quantity</th>
+        <th>Price</th>
+        <th>Category</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const tbody = document.querySelector('#itemsTable tbody');
+    const msgEl = document.getElementById('msg');
+
+    function showError(text) {
+      msgEl.innerHTML = '<div class="error">' + text + '</div>';
+    }
+
+    async function loadItems() {
+      try {
+        const res = await fetch('/items');
+        if (!res.ok) throw new Error('Failed to load items (status ' + res.status + ')');
+        const items = await res.json();
+        tbody.innerHTML = '';
+
+        if (items.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6">No items found.</td></tr>';
+          return;
+        }
+
+        for (const item of items) {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${item.id}</td>
+            <td><a href="view_item.html?id=${item.id}">${item.name}</a></td>
+            <td>${item.quantity}</td>
+            <td>${item.price.toFixed(2)}</td>
+            <td>${item.category ?? ''}</td>
+            <td>
+              <a href="edit_item.html?id=${item.id}">Edit</a> |
+              <a href="#" data-id="${item.id}" class="delete-link">Delete</a>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        }
+
+        document.querySelectorAll('.delete-link').forEach(link => {
+          link.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const id = e.target.dataset.id;
+            if (!confirm('Delete item ' + id + '?')) return;
+            try {
+              const res = await fetch('/items/' + id, { method: 'DELETE' });
+              if (!res.ok) throw new Error('Delete failed');
+              loadItems();
+            } catch (err) {
+              showError(err.message);
+            }
+          });
+        });
+
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    }
+
+    loadItems();
+  </script>
+</body>
+</html>

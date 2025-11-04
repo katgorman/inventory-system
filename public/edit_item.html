@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Edit Item</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; max-width:800px; margin:24px auto; padding:0 12px; }
+    label { display:block; margin:8px 0; }
+    input[type="text"], input[type="number"], textarea { width:100%; padding:8px; box-sizing:border-box; }
+    .actions { margin-top:12px; }
+    button { padding:8px 12px; margin-right:8px; }
+    .error { color: #b00020; margin-top:8px; }
+    .success { color: #006400; margin-top:8px; }
+  </style>
+</head>
+<body>
+  <h1>Edit Item</h1>
+
+  <form id="editForm" autocomplete="off">
+    <input type="hidden" name="id" id="itemId">
+
+    <label>
+      Name (required)
+      <input type="text" name="name" id="name" required>
+    </label>
+
+    <label>
+      Description
+      <textarea name="description" id="description" rows="3"></textarea>
+    </label>
+
+    <label>
+      Quantity (required)
+      <input type="number" name="quantity" id="quantity" min="0" required>
+    </label>
+
+    <label>
+      Price (required)
+      <input type="number" name="price" id="price" step="0.01" min="0" required>
+    </label>
+
+    <label>
+      Category (optional)
+      <input type="text" name="category" id="category">
+    </label>
+
+
+    <div class="actions">
+      <button type="submit" id="saveBtn">Save</button>
+      <button type="button" id="deleteBtn">Delete</button>
+      <a href="/" style="margin-left:8px">Back to list</a>
+    </div>
+
+    <div id="msg"></div>
+  </form>
+
+  <script>
+    const msgEl = document.getElementById('msg');
+
+    function showError(text) {
+      msgEl.innerHTML = '<div class="error">' + text + '</div>';
+    }
+    function showSuccess(text) {
+      msgEl.innerHTML = '<div class="success">' + text + '</div>';
+    }
+    function clearMsg() { msgEl.innerHTML = ''; }
+
+    // parse id from querystring ?id=...
+    function getIdFromQuery() {
+      const params = new URLSearchParams(location.search);
+      return params.get('id');
+    }
+
+    async function loadItem() {
+      clearMsg();
+      const id = getIdFromQuery();
+      if (!id) {
+        showError('Missing item id in the URL. Example: edit_item.html?id=3');
+        document.getElementById('editForm').style.display = 'none';
+        return;
+      }
+
+      try {
+        const res = await fetch('/items/' + encodeURIComponent(id));
+        if (!res.ok) {
+          if (res.status === 404) throw new Error('Item not found');
+          throw new Error('Failed to fetch item (status ' + res.status + ')');
+        }
+        const item = await res.json();
+        // populate form
+        document.getElementById('itemId').value = item.id;
+        document.getElementById('name').value = item.name || '';
+        document.getElementById('description').value = item.description || '';
+        document.getElementById('quantity').value = item.quantity ?? 0;
+        document.getElementById('price').value = item.price ?? 0.00;
+        document.getElementById('category').value = item.category ?? '';
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    }
+
+    // submit update
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearMsg();
+
+      const id = document.getElementById('itemId').value;
+      const data = {
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('description').value.trim() || null,
+        quantity: Number(document.getElementById('quantity').value),
+        price: Number(document.getElementById('price').value),
+        category: document.getElementById('category').value.trim() || null
+      };
+
+      // basic client-side validation
+      if (!data.name) return showError('Name is required.');
+      if (isNaN(data.quantity) || data.quantity < 0) return showError('Quantity must be a non-negative number.');
+      if (isNaN(data.price) || data.price < 0) return showError('Price must be a non-negative number.');
+
+      try {
+        const res = await fetch('/items/' + encodeURIComponent(id), {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(()=>({}));
+          throw new Error(body.error || ('Update failed (status ' + res.status + ')'));
+        }
+        const updated = await res.json();
+        showSuccess('Item updated successfully.');
+        // short delay to let user see success then redirect back to list
+        setTimeout(() => location.href = '/', 900);
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    });
+
+    // delete handler
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      clearMsg();
+      const id = document.getElementById('itemId').value;
+      if (!confirm('Delete item ' + id + '? This cannot be undone.')) return;
+      try {
+        const res = await fetch('/items/' + encodeURIComponent(id), { method: 'DELETE' });
+        if (!res.ok) {
+          const body = await res.json().catch(()=>({}));
+          throw new Error(body.error || ('Delete failed (status ' + res.status + ')'));
+        }
+        showSuccess('Item deleted.');
+        setTimeout(() => location.href = '/', 700);
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    });
+
+    // initialize
+    loadItem();
+  </script>
+</body>
+</html>

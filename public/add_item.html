@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Add Item</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 30px auto; padding: 0 12px; }
+    label { display: block; margin: 8px 0; }
+    input[type="text"], input[type="number"], textarea { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { padding: 8px 12px; margin-right: 6px; }
+    .error { color: #b00020; margin-top: 8px; }
+    .success { color: #006400; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <h1>Add Item</h1>
+
+  <form id="addForm">
+    <label>
+      Name (required)
+      <input type="text" id="name" required>
+    </label>
+
+    <label>
+      Description
+      <textarea id="description" rows="3"></textarea>
+    </label>
+
+    <label>
+      Quantity (required)
+      <input type="number" id="quantity" min="0" required>
+    </label>
+
+    <label>
+      Price (required)
+      <input type="number" id="price" step="0.01" min="0" required>
+    </label>
+
+    <label>
+      Category (optional)
+      <input type="text", name="category", id="category">
+    </label>
+
+    <button type="submit">Add Item</button>
+    <a href="/">Cancel</a>
+
+    <div id="msg"></div>
+  </form>
+
+  <script>
+    const msgEl = document.getElementById('msg');
+    function showError(text) { msgEl.innerHTML = '<div class="error">' + text + '</div>'; }
+    function showSuccess(text) { msgEl.innerHTML = '<div class="success">' + text + '</div>'; }
+
+    document.getElementById('addForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msgEl.innerHTML = '';
+
+      const data = {
+        name: document.getElementById('name').value.trim(),
+        description: document.getElementById('description').value.trim() || null,
+        quantity: Number(document.getElementById('quantity').value),
+        price: Number(document.getElementById('price').value),
+        category: document.getElementById('category').value.trim() || null
+      };
+
+      if (!data.name) return showError('Name is required.');
+
+      try {
+        const res = await fetch('/items', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (!res.ok) throw new Error('Add failed');
+        showSuccess('Item added successfully!');
+        setTimeout(() => location.href = '/', 1000);
+      } catch (err) {
+        showError(err.message);
+      }
+    });
+  </script>
+</body>
+</html>
