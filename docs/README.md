@@ -12,7 +12,7 @@ Kat, Sasha, Julie, and Noah
 ## Tools 
 - **Node.js** – Server runtime  
 - **Express.js** – Backend framework for routing and APIs  
-- **MySQL** – Relational database for persistent storage  
+- **MySQL** – Relational database for storage  
 
 ---
 
