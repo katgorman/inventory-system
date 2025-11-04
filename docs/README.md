@@ -1,5 +1,7 @@
 # Inventory System
 
+GitHub Repo: https://github.com/katgorman/inventory-system
+
 ---
 
 ## Team
@@ -15,8 +17,7 @@ Kat, Sasha, Julie, and Noah
 ---
 
 ## Overview
-This project is a simple **Inventory Management System** that connects a **Node.js + Express** backend to a **MySQL** database.  
-It demonstrates full CRUD operations (Create, Read, Update, Delete) and basic relational database design.
+This project is a simple Inventory Management System that connects a Node.js + Express backend to a MySQL database. It demonstrates full CRUD operations (Create, Read, Update, Delete) and basic relational database design.
 
 Each item record includes:
 - ID (auto-incremented primary key)
